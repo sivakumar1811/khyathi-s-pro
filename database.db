@@ -1,0 +1,98 @@
+import sqlite3
+
+def init_db():
+    conn = sqlite3.connect("database.db")
+    cursor = conn.cursor()
+
+    # Create departments table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS departments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL
+    )
+    ''')
+
+    # Create users table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        email TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+    )
+    ''')
+
+    # Create admins table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS admins (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT UNIQUE NOT NULL,
+        password TEXT NOT NULL
+    )
+    ''')
+
+    # Create workers table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS workers (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        department_id INTEGER,
+        email TEXT,
+        FOREIGN KEY (department_id) REFERENCES departments(id)
+    )
+    ''')
+
+    # Create reports table
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        department_id INTEGER,
+        description TEXT NOT NULL,
+        image_path TEXT,
+        location TEXT,
+        status TEXT DEFAULT 'Unsolved',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (department_id) REFERENCES departments(id)
+    )
+    ''')
+
+    # Insert sample departments
+    cursor.executemany('INSERT OR IGNORE INTO departments (name) VALUES (?)',
+                       [('Electrical',), ('Civil',), ('Mechanical',)])
+
+    # Insert sample users
+    cursor.executemany('INSERT OR IGNORE INTO users (username, email, password) VALUES (?, ?, ?)', [
+        ('john_doe', 'john@example.com', 'pass123'),
+        ('jane_smith', 'jane@example.com', 'secure456')
+    ])
+
+    # Insert sample admins
+    cursor.executemany('INSERT OR IGNORE INTO admins (username, password) VALUES (?, ?)', [
+        ('admin1', 'adminpass'),
+        ('superadmin', 'supersecure')
+    ])
+
+    # Insert sample workers
+    cursor.executemany('INSERT OR IGNORE INTO workers (name, department_id, email) VALUES (?, ?, ?)', [
+        ('Ravi Kumar', 1, 'ravi@dept.com'),
+        ('Anjali Singh', 2, 'anjali@dept.com'),
+        ('Mohan Rao', 3, 'mohan@dept.com')
+    ])
+
+    # Insert sample reports with location added
+    cursor.executemany('''
+        INSERT OR IGNORE INTO reports (user_id, department_id, description, image_path, location)
+        VALUES (?, ?, ?, ?, ?)
+    ''', [
+        (1, 1, 'Short circuit in ground floor room 101.', 'static/uploaded_images/report1.jpg', 'Ground Floor, Room 101'),
+        (2, 2, 'Broken window pane in lab area.', 'static/uploaded_images/report2.jpg', 'Lab Area, Building B')
+    ])
+
+    conn.commit()
+    conn.close()
+    print("Database initialized and filled successfully.")
+
+# Run this once to create tables and fill initial data
+init_db()
